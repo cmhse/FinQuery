@@ -4,7 +4,7 @@
 A Streamlit app where a user asks plain-English FP&A questions (variance, margin, forecast changes) about a synthetic general-ledger dataset, and Claude translates the question into validated SQL, executes it, self-corrects on failure, and returns results with auto-generated charts and finance commentary.
 
 ## Why this project exists (context for Claude Code, not a build instruction)
-This is a portfolio project for a Data Science student applying to Microsoft's Finance Rotation Program (FRP). Goal: demonstrate DS skills (Python, SQL) applied to a genuine FP&A workflow, with defensible "agentic AI" behavior (self-correcting retry loop) and real finance logic (not generic BI buzzwords). Every design choice should favor being explainable and defensible in a technical interview over being flashy.
+This is a passion project combining data science and FP&A workflows. Goal: demonstrate DS skills (Python, SQL) applied to a genuine FP&A workflow, with defensible "agentic AI" behavior (self-correcting retry loop) and real finance logic (not generic BI buzzwords). Every design choice should favor being explainable and defensible over being flashy.
 
 ---
 
