@@ -1,8 +1,8 @@
 # FinQuery
 
-Copilot-powered FP&A natural-language query tool. See `frp-project-spec.md` for the full project spec.
+A financial tool that takes in a query in written language and converts it into a SQL query that runs and delivers its output — built for FP&A workflows (variance, margin, forecast questions) against a synthetic general-ledger dataset. See `frp-project-spec.md` for the full project spec.
 
-Status: in progress — Part 1 (schema + synthetic GL data generator) is done. Metrics layer, SQL agent, eval harness, and Streamlit UI are not yet built.
+Status: in progress — Part 1 (schema + synthetic GL data generator) and Part 2 (metrics layer) are done. SQL agent, eval harness, and Streamlit UI are not yet built.
 
 ## Setup
 
