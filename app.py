@@ -60,11 +60,11 @@ def render_result(question: str, result: dict) -> None:
             )
 
     st.markdown("**Result table**")
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, width="stretch")
 
     if chart_type in ("line", "bar", "waterfall") and fig is not None:
         st.markdown("**Chart**")
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     if is_variance_question(question):
         st.markdown("**Commentary**")
@@ -92,7 +92,7 @@ with st.sidebar:
 
     st.header("Try an example")
     for q in EXAMPLE_QUESTIONS:
-        if st.button(q, key=f"example_{q}", use_container_width=True):
+        if st.button(q, key=f"example_{q}", width="stretch"):
             st.session_state.pending_question = q
 
     if st.session_state.history and st.button("Clear conversation"):
