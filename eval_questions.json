@@ -1,0 +1,179 @@
+[
+  {
+    "id": "S1",
+    "category": "simple_aggregation",
+    "question": "What was total actual revenue in 2024?",
+    "expected_type": "dollar",
+    "expected_value": 9192426.38,
+    "tolerance": 0.01,
+    "grading": {"reduce": "scalar"}
+  },
+  {
+    "id": "S2",
+    "category": "simple_aggregation",
+    "question": "What was total actual Opex in 2023?",
+    "expected_type": "dollar",
+    "expected_value": 4238885.98,
+    "tolerance": 0.01,
+    "grading": {"reduce": "scalar"}
+  },
+  {
+    "id": "S3",
+    "category": "simple_aggregation",
+    "question": "How many cost centers are in the Engineering department?",
+    "expected_type": "count",
+    "expected_value": 2,
+    "tolerance": 0,
+    "grading": {"reduce": "scalar"}
+  },
+  {
+    "id": "S4",
+    "category": "simple_aggregation",
+    "question": "What was total actual headcount cost in 2025?",
+    "expected_type": "dollar",
+    "expected_value": 10717688.14,
+    "tolerance": 0.01,
+    "grading": {"reduce": "scalar"}
+  },
+  {
+    "id": "S5",
+    "category": "simple_aggregation",
+    "question": "What was actual Travel & Entertainment spend in July 2024?",
+    "expected_type": "dollar",
+    "expected_value": 31535.89,
+    "tolerance": 0.01,
+    "grading": {"reduce": "scalar"}
+  },
+  {
+    "id": "S6",
+    "category": "simple_aggregation",
+    "question": "How many distinct accounts fall under the Opex account type?",
+    "expected_type": "count",
+    "expected_value": 7,
+    "tolerance": 0,
+    "grading": {"reduce": "scalar"}
+  },
+  {
+    "id": "V1",
+    "category": "variance",
+    "question": "What was the actual vs. budget variance in dollars for Marketing Opex in 2024?",
+    "expected_type": "dollar",
+    "expected_value": 5740.07,
+    "tolerance": 0.01,
+    "notes": "budget = version 'budget_original'; actual - budget per metrics.budget_variance_dollar.",
+    "grading": {"reduce": "diff", "minuend": "actual", "subtrahend": "budget_original"}
+  },
+  {
+    "id": "V2",
+    "category": "variance",
+    "question": "What was the budget variance percentage for Sales COGS in 2024?",
+    "expected_type": "percent",
+    "expected_value": 0.09862,
+    "tolerance": 0.002,
+    "notes": "(actual - budget) / budget per metrics.budget_variance_pct.",
+    "grading": {"reduce": "pct_diff", "minuend": "actual", "subtrahend": "budget_original"}
+  },
+  {
+    "id": "V3",
+    "category": "variance",
+    "question": "How did the June reforecast compare to the March reforecast for Engineering Headcount in 2024, in dollars?",
+    "expected_type": "dollar",
+    "expected_value": 5647.81,
+    "tolerance": 0.01,
+    "notes": "forecast_jun total minus forecast_mar total - three-way version comparison, not vs. actual.",
+    "grading": {"reduce": "diff", "minuend": "forecast_jun", "subtrahend": "forecast_mar"}
+  },
+  {
+    "id": "V4",
+    "category": "variance",
+    "question": "Was Engineering - West over or under budget on Opex in 2024, and by how much in dollars?",
+    "expected_type": "dollar",
+    "expected_value": -4064.43,
+    "tolerance": 0.01,
+    "notes": "Negative means under budget (actual < budget_original) for this specific cost center.",
+    "grading": {"reduce": "diff", "minuend": "actual", "subtrahend": "budget_original"}
+  },
+  {
+    "id": "V5",
+    "category": "variance",
+    "question": "What was the forecast variance in dollars (actual vs. the March forecast) for total revenue in 2024?",
+    "expected_type": "dollar",
+    "expected_value": 293560.51,
+    "tolerance": 0.01,
+    "notes": "actual - forecast_mar per metrics.forecast_variance_dollar.",
+    "grading": {"reduce": "diff", "minuend": "actual", "subtrahend": "forecast_mar"}
+  },
+  {
+    "id": "V6",
+    "category": "variance",
+    "question": "What was the dollar change in actual revenue from October 2024 to November 2024?",
+    "expected_type": "dollar",
+    "expected_value": -1084.26,
+    "tolerance": 0.01,
+    "expect_first_attempt_fail": true,
+    "notes": "Comparing two months from the same table tends to push a first-pass model toward a self-join, which SQLite rejects with an ambiguous-column error unless both sides are aliased and every selected column is qualified - a good test of the retry loop. Simple two-aggregate SQL (no self-join) avoids the problem entirely.",
+    "grading": {"reduce": "diff", "minuend": "2024-11-01", "subtrahend": "2024-10-01"}
+  },
+  {
+    "id": "M1",
+    "category": "metrics_layer",
+    "question": "What was the gross margin percentage in 2024?",
+    "expected_type": "percent",
+    "expected_value": 0.73441,
+    "tolerance": 0.002,
+    "notes": "(revenue - cogs) / revenue, both account_type-based sums for 2024 actuals.",
+    "grading": {"reduce": "margin", "numerator": "Revenue", "subtract": "COGS"}
+  },
+  {
+    "id": "M2",
+    "category": "metrics_layer",
+    "question": "What was the Opex ratio in 2024?",
+    "expected_type": "percent",
+    "expected_value": 0.47760,
+    "tolerance": 0.002,
+    "notes": "opex / revenue for 2024 actuals.",
+    "grading": {"reduce": "ratio", "numerator": "Opex", "denominator": "Revenue"}
+  },
+  {
+    "id": "M3",
+    "category": "metrics_layer",
+    "question": "What was year-over-year growth in actual revenue from 2023 to 2024?",
+    "expected_type": "percent",
+    "expected_value": 0.06838,
+    "tolerance": 0.002,
+    "expect_first_attempt_fail": true,
+    "notes": "gl_data has no 'year' column - a first attempt that filters WHERE year = 2024 instead of strftime('%Y', date) = '2024' will error out and needs the retry loop to recover.",
+    "grading": {"reduce": "pct_diff", "minuend": "2024", "subtrahend": "2023"}
+  },
+  {
+    "id": "M4",
+    "category": "metrics_layer",
+    "question": "What was month-over-month growth in actual revenue from November 2024 to December 2024?",
+    "expected_type": "percent",
+    "expected_value": 0.01400,
+    "tolerance": 0.002,
+    "expect_first_attempt_fail": true,
+    "notes": "Same self-join-ambiguity risk as V6, now combined with a division - two independent ways for a first attempt to go wrong.",
+    "grading": {"reduce": "pct_diff", "minuend": "2024-12-01", "subtrahend": "2024-11-01"}
+  },
+  {
+    "id": "M5",
+    "category": "metrics_layer",
+    "question": "What is the run-rate based on the most recent month of actual revenue in the dataset?",
+    "expected_type": "dollar",
+    "expected_value": 11373908.88,
+    "tolerance": 0.01,
+    "notes": "latest_month_actual * 12; latest actual month in the dataset is 2025-12-01.",
+    "grading": {"reduce": "scalar"}
+  },
+  {
+    "id": "M6",
+    "category": "metrics_layer",
+    "question": "How much did the forecast for Sales COGS change from the March reforecast to the June reforecast in 2024, in percentage terms?",
+    "expected_type": "percent",
+    "expected_value": 0.02716,
+    "tolerance": 0.002,
+    "notes": "(forecast_jun - forecast_mar) / forecast_mar - three-way version terminology plus a percentage, no single metrics.py function covers this exact pairing so the model has to combine two of the documented formulas correctly.",
+    "grading": {"reduce": "pct_diff", "minuend": "forecast_jun", "subtrahend": "forecast_mar"}
+  }
+]
