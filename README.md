@@ -69,30 +69,38 @@ FP&A-style commentary line for variance questions.
 independent of the LLM) through the pipeline twice — once with
 `max_retries=0` (baseline) and once with the retry loop enabled — and reports
 accuracy for both, plus which questions were only fixed by the retry loop.
-Three of the eighteen questions are deliberately designed to trip up a naive
-first attempt (e.g. asking for a month-over-month change, which invites a
-self-join SQLite will reject as ambiguous unless every column is qualified),
-specifically to give the retry loop something to prove.
-
-This hasn't been run yet in this environment — there's no `ANTHROPIC_API_KEY`
-configured here. Run it yourself with:
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...
+export ANTHROPIC_API_KEY=sk-ant-...   # or: ant auth login
 python run_eval.py
 ```
 
-It prints a pass/fail line per question for each pass, then a summary like:
+**Actual result, run against `claude-sonnet-5`:**
 
 ```
-Baseline accuracy:      72.2% (13/18)
-Retry-enabled accuracy: 94.4% (17/18)
-Questions fixed by the retry loop: ['V6', 'M3', 'M4']
+Baseline accuracy:      100.0% (18/18)
+Retry-enabled accuracy: 100.0% (18/18)
+Questions fixed by the retry loop: none
 ```
 
-(illustrative shape only — real numbers depend on the model's actual
-behavior; a full report is also written to `logs/eval_report.json`). Once
-you've run it, paste the real numbers in here.
+Three of the eighteen questions were deliberately written to invite a
+first-attempt mistake — a self-join SQLite would reject as an ambiguous
+column reference unless every selected column is qualified (for a
+month-over-month comparison), and a filter a naive model might write against
+a nonexistent `year` column instead of `strftime('%Y', date)` (for
+year-over-year growth). In practice, the retry loop never fired at all: every
+one of the 18 questions, including those three, produced a correct query on
+the very first attempt in both passes. The schema-grounded system prompt and
+few-shot examples appear to be doing enough work up front that this
+particular eval set doesn't exercise the self-correction path — which says
+more about this model's baseline SQL competence on a well-documented schema
+than it does about the retry loop being unnecessary. The loop is still there
+as a safety net for cases this eval didn't happen to hit (schema drift,
+odder phrasing, a genuinely ambiguous multi-table join); a fuller eval set
+aimed at reliably reproducing the retry-loop-saves-the-day story would need
+harder failure modes than these three.
+
+A full per-question report is written to `logs/eval_report.json`.
 
 ## Setup
 

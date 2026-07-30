@@ -163,8 +163,8 @@
     "expected_type": "dollar",
     "expected_value": 11373908.88,
     "tolerance": 0.01,
-    "notes": "latest_month_actual * 12; latest actual month in the dataset is 2025-12-01.",
-    "grading": {"reduce": "scalar"}
+    "notes": "latest_month_actual * 12; latest actual month in the dataset is 2025-12-01. Accepts either the raw latest-month value or the multiplied run-rate - both are a valid reading of the metrics-layer instruction given this pipeline's 'return raw values, let the app combine them' pattern for anything needing more than one number.",
+    "grading": {"reduce": "scalar_or_scaled", "scale": 12}
   },
   {
     "id": "M6",

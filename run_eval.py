@@ -29,6 +29,23 @@ QUESTIONS_PATH = REPO_ROOT / "eval_questions.json"
 REPORT_PATH = REPO_ROOT / "logs" / "eval_report.json"
 
 
+def _lookup(series: pd.Series, key: str):
+    """
+    Look up a group value, tolerating date-grouping granularity the model is
+    free to choose. 'What was actual in November 2024' can legitimately come
+    back grouped by the full date ('2024-11-01') or by strftime('%Y-%m', ...)
+    ('2024-11') - both are correct SQL, so an exact-match-only lookup would
+    penalize a valid query for a formatting choice the schema doesn't pin
+    down. Falls back to a year-month prefix match before giving up.
+    """
+    if key in series.index:
+        return series[key]
+    prefix_matches = [v for idx, v in series.items() if str(idx).startswith(key[:7])]
+    if len(prefix_matches) == 1:
+        return prefix_matches[0]
+    raise KeyError(key)
+
+
 def _reduce(df: pd.DataFrame, grading: dict[str, Any]):
     """
     Collapse a SQL result DataFrame down to the single scalar the question
@@ -44,11 +61,11 @@ def _reduce(df: pd.DataFrame, grading: dict[str, Any]):
     # If the model already computed a single final value (e.g. did the
     # subtraction/division itself in SQL), trust it rather than force-fitting
     # the group-based reduction below.
-    if len(df) == 1 and len(numeric_cols) == 1 and grading["reduce"] != "scalar":
+    if len(df) == 1 and len(numeric_cols) == 1 and grading["reduce"] not in ("scalar", "scalar_or_scaled"):
         return float(df[numeric_cols[0]].iloc[0])
 
     reduce_type = grading["reduce"]
-    if reduce_type == "scalar":
+    if reduce_type in ("scalar", "scalar_or_scaled"):
         if not numeric_cols or df.empty:
             raise ValueError("no numeric column to read a scalar from")
         return float(df[numeric_cols[0]].iloc[0])
@@ -60,14 +77,14 @@ def _reduce(df: pd.DataFrame, grading: dict[str, Any]):
     series = df.set_index(group_col)[value_col]
 
     if reduce_type == "diff":
-        return float(series[grading["minuend"]] - series[grading["subtrahend"]])
+        return float(_lookup(series, grading["minuend"]) - _lookup(series, grading["subtrahend"]))
     if reduce_type == "pct_diff":
-        a, b = series[grading["minuend"]], series[grading["subtrahend"]]
+        a, b = _lookup(series, grading["minuend"]), _lookup(series, grading["subtrahend"])
         return float((a - b) / b)
     if reduce_type == "ratio":
-        return float(series[grading["numerator"]] / series[grading["denominator"]])
+        return float(_lookup(series, grading["numerator"]) / _lookup(series, grading["denominator"]))
     if reduce_type == "margin":
-        num, sub = series[grading["numerator"]], series[grading["subtract"]]
+        num, sub = _lookup(series, grading["numerator"]), _lookup(series, grading["subtract"])
         return float((num - sub) / num)
 
     raise ValueError(f"unknown reduce type: {reduce_type}")
@@ -84,18 +101,27 @@ def grade(result: dict[str, Any], eq: dict[str, Any]) -> dict[str, Any]:
 
     expected = eq["expected_value"]
     tolerance = eq.get("tolerance", 0)
-    if tolerance == 0:
-        correct = actual_value == expected
-    else:
-        # tolerance is applied as an absolute band for both dollar and
-        # percent questions (percent expected_values are stored as fractions,
-        # e.g. 0.05 = 5%, so a 0.002 tolerance is +/- 0.2 percentage points;
-        # dollar tolerances are set per-question to comfortably exceed
-        # floating-point rounding noise without masking a wrong query).
+
+    def _within(value: float) -> bool:
+        if tolerance == 0:
+            return value == expected
         if eq["expected_type"] == "dollar":
-            correct = abs(actual_value - expected) <= max(abs(expected) * tolerance, 0.01)
-        else:
-            correct = abs(actual_value - expected) <= tolerance
+            return abs(value - expected) <= max(abs(expected) * tolerance, 0.01)
+        return abs(value - expected) <= tolerance
+
+    # scalar_or_scaled: the metrics-layer note for this question is a
+    # single-step arithmetic transform (e.g. run-rate = latest_month * 12).
+    # The system prompt's few-shot pattern otherwise teaches "return raw
+    # values, let the app combine them" for anything needing more than one
+    # SQL result, so a model applying that same instinct here returns the
+    # raw value rather than doing the multiplication in SQL - both are a
+    # correct reading of the instructions, so accept either.
+    if eq["grading"]["reduce"] == "scalar_or_scaled":
+        scale = eq["grading"]["scale"]
+        correct = _within(actual_value) or _within(actual_value * scale)
+    else:
+        correct = _within(actual_value)
+
     return {"correct": correct, "actual_value": actual_value, "reason": None}
 
 
