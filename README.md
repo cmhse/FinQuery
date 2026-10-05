@@ -64,7 +64,7 @@ FP&A-style commentary line for variance questions.
 
 ## Accuracy results
 
-`run_eval.py` runs the 18 hand-written questions in `eval_questions.json`
+`run_eval.py` runs the 25 hand-written questions in `eval_questions.json`
 (each with a ground-truth value computed directly against the database,
 independent of the LLM) through the pipeline twice — once with
 `max_retries=0` (baseline) and once with the retry loop enabled — and reports
@@ -78,18 +78,18 @@ python run_eval.py
 **Actual result, run against `claude-sonnet-5`:**
 
 ```
-Baseline accuracy:      100.0% (18/18)
-Retry-enabled accuracy: 100.0% (18/18)
+Baseline accuracy:      100.0% (25/25)
+Retry-enabled accuracy: 100.0% (25/25)
 Questions fixed by the retry loop: none
 ```
 
-Three of the eighteen questions were deliberately written to invite a
+Three of the twenty-five questions were deliberately written to invite a
 first-attempt mistake — a self-join SQLite would reject as an ambiguous
 column reference unless every selected column is qualified (for a
 month-over-month comparison), and a filter a naive model might write against
 a nonexistent `year` column instead of `strftime('%Y', date)` (for
 year-over-year growth). In practice, the retry loop never fired at all: every
-one of the 18 questions, including those three, produced a correct query on
+one of the 25 questions, including those three, produced a correct query on
 the very first attempt in both passes. The schema-grounded system prompt and
 few-shot examples appear to be doing enough work up front that this
 particular eval set doesn't exercise the self-correction path — which says
@@ -150,6 +150,3 @@ Not yet built — listed here rather than left implicit:
 - **Scenario/what-if module** using NPV/IRR-style recalculation.
 - **Threshold-based compliance flagging** (e.g. cost centers over budget by
   more than 10%) with an auto-generated summary.
-- **A second dataset built from Microsoft's public 10-K segment data** as a
-  real-company demo case study, distinct from the synthetic GL data used
-  everywhere else in this project.
